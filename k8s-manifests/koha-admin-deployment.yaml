@@ -15,7 +15,7 @@ spec:
       containers:
       - name: koha-admin
         # In a CI/CD pipeline, your GitHub Actions will replace "latest" with your actual git commit hash
-        image: ghcr.io/rklsubha2017-cloud/admin-cms-docker/koha-admin:latest 
+        image: ghcr.io/rklsubha2017-cloud/admin-cms-docker/koha-admin:72031b424b2cd65d4d8dd5a233881f7b33d19219
         ports:
         - containerPort: 5000
         envFrom:

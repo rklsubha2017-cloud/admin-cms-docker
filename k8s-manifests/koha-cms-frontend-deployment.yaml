@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ghcr.io/rklsubha2017-cloud/admin-cms-docker/koha-cms-frontend:latest
+        image: ghcr.io/rklsubha2017-cloud/admin-cms-docker/koha-cms-frontend:72031b424b2cd65d4d8dd5a233881f7b33d19219
         ports:
         - containerPort: 80
 
