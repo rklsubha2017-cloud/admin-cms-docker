@@ -1,0 +1,24 @@
+# Web Framework & Server
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Database & ORM
+sqlalchemy
+pymysql
+
+# Security & Authentication
+cryptography
+bcrypt
+passlib[bcrypt]
+PyJWT
+
+# Background Tasks & Automation
+APScheduler
+
+# Document Generation & Templating
+pdfkit
+jinja2
+
+# Environment Variables
+python-dotenv

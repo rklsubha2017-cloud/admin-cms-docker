@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: koha-admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: koha-admin
+  template:
+    metadata:
+      labels:
+        app: koha-admin
+    spec:
+      containers:
+      - name: koha-admin
+        # In a CI/CD pipeline, your GitHub Actions will replace "latest" with your actual git commit hash
+        image: ghcr.io/rklsubha2017-cloud/admin-cms-docker/koha-admin:latest 
+        ports:
+        - containerPort: 5000
+        envFrom:
+        - secretRef:
+            name: koha-admin-secrets # Loads CMS_VAULT_URL and CMS_JWT_TOKEN
+        env:
+        - name: SSH_KEY_PATH
+          value: "/app/ssh/id_ed25519" # We tell the app to look for the key here inside the container
+        volumeMounts:
+        - name: ssh-key-volume
+          mountPath: "/app/ssh" # We mount the Kubernetes secret as a physical file here
+          readOnly: true
+      volumes:
+      - name: ssh-key-volume
+        secret:
+          secretName: koha-ssh-key
+          defaultMode: 0400 # SSH requires strict file permissions
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: koha-admin-service
+spec:
+  selector:
+    app: koha-admin
+  ports:
+  - port: 5000
+    targetPort: 5000

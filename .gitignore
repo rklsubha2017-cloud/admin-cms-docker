@@ -1,0 +1,21 @@
+# Node & Frontend
+node_modules/
+dist/
+
+# Python & Backend
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+
+# Environment Variables
+.env
+.env.*
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+
+# CRITICAL SECURITY IGNORES
+k8s-manifests/koha-secrets.yaml

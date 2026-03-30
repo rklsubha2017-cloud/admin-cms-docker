@@ -1,0 +1,20 @@
+--Install cert-manager on your K3s Server
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.yaml
+
+kubectl apply -f cluster-issuer.yaml
+
+
+kubectl apply -f ingress-rules.yaml
+
+kubectl apply -f koha-secrets.yaml
+
+kubectl create secret generic koha-ssh-key --from-file=id_ed25519=/home/ksg/.ssh/id_ed25519
+
+# On your server:
+nano koha-secrets.yaml
+# (Paste your secret configurations here and save)
+
+kubectl apply -f koha-secrets.yaml
+
+# Once applied, delete the file from the server so it doesn't just sit there
+rm koha-secrets.yaml

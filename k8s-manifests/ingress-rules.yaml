@@ -1,0 +1,61 @@
+# 1. Ingress for koha-admin
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: koha-admin-ingress
+  annotations:
+    # This tells cert-manager to automatically get a certificate using the issuer we made in Step 3
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # Force HTTP traffic to redirect to HTTPS
+    ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - admin.rrkohademo.in
+    secretName: admin-xyz-in-tls # cert-manager will store the certificate in this secret
+  rules:
+  - host: admin.rrkohademo.in
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: koha-admin-service # This must match the Service name for your Flask app
+            port:
+              number: 5000
+
+---
+# 2. Ingress for koha-cms (Frontend & Backend)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: koha-cms-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - cms.rrkohademo.in
+    secretName: cms-rrkohademo-in-tls 
+  rules:
+  - host: cms.rrkohademo.in
+    http:
+      paths:
+      # Send anything starting with /api to the FastAPI Backend
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: koha-cms-backend-service 
+            port:
+              number: 8000
+      # Send everything else (/) to the React Frontend
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: koha-cms-frontend-service
+            port:
+              number: 80

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Koha Installation Overview Document - {{ client_code }}</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; line-height: 1.6; margin: 40px; }
+        .header { border-bottom: 3px solid #8b5cf6; padding-bottom: 10px; margin-bottom: 30px; }
+        .header h1 { margin: 0; color: #1e293b; font-size: 28px; }
+        .header p { margin: 5px 0 0 0; color: #64748b; font-size: 14px; }
+        .section { margin-bottom: 30px; }
+        .section h2 { color: #8b5cf6; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; font-size: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+        th { background-color: #f8fafc; color: #475569; font-weight: 600; width: 35%; }
+        td { font-family: 'Courier New', Courier, monospace; color: #0f172a; }
+        .footer { margin-top: 50px; font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Koha Installation Overview Document</h1>
+        <p><strong>Client Name:</strong> {{ client_name }}</p> 
+        <p><strong>Client Code:</strong> {{ client_code }}</p>
+        <p><strong>Generated On:</strong> {{ generation_date }}</p>
+        <p><strong>Confidentiality Notice:</strong> This document contains sensitive infrastructure credentials. Do not distribute unauthorized copies.</p>
+    </div>
+
+    {% if 'os_details' in selected_fields or 'system_ip' in selected_fields or 'system_user' in selected_fields or 'system_pass' in selected_fields or 'anydesk_id' in selected_fields or 'anydesk_pw' in selected_fields or 'teamviewer_id' in selected_fields or 'teamviewer_pw' in selected_fields %}
+    <div class="section">
+        <h2>Server & Remote Access</h2>
+        <table>
+            {% if 'os_details' in selected_fields %}<tr><th>OS Details</th><td>{{ vault.os_details }}</td></tr>{% endif %}
+            {% if 'system_ip' in selected_fields %}<tr><th>System IP</th><td>{{ vault.system_ip }}</td></tr>{% endif %}
+            {% if 'system_user' in selected_fields %}<tr><th>System User</th><td>{{ vault.system_user }}</td></tr>{% endif %}
+            {% if 'system_pass' in selected_fields %}<tr><th>System Password</th><td>{{ vault.system_pass }}</td></tr>{% endif %}
+            {% if 'anydesk_id' in selected_fields %}<tr><th>Anydesk ID</th><td>{{ vault.anydesk_id }}</td></tr>{% endif %}
+            {% if 'anydesk_pw' in selected_fields %}<tr><th>Anydesk Password</th><td>{{ vault.anydesk_pw }}</td></tr>{% endif %}
+            {% if 'teamviewer_id' in selected_fields %}<tr><th>Teamviewer ID</th><td>{{ vault.teamviewer_id }}</td></tr>{% endif %}
+            {% if 'teamviewer_pw' in selected_fields %}<tr><th>Teamviewer Password</th><td>{{ vault.teamviewer_pw }}</td></tr>{% endif %}
+        </table>
+    </div>
+    {% endif %}
+
+    {% if 'koha_instance' in selected_fields or 'koha_opac_port' in selected_fields or 'koha_staff_port' in selected_fields or 'koha_admin_user' in selected_fields or 'koha_admin_pass' in selected_fields or 'koha_staff_user' in selected_fields or 'koha_staff_pass' in selected_fields %}
+    <div class="section">
+        <h2>Koha Application Access</h2>
+        <table>
+            {% if 'koha_instance' in selected_fields %}<tr><th>Koha Instance Name</th><td>{{ vault.koha_instance }}</td></tr>{% endif %}
+            {% if 'koha_opac_port' in selected_fields %}<tr><th>OPAC Port</th><td>{{ vault.koha_opac_port }}</td></tr>{% endif %}
+            {% if 'koha_staff_port' in selected_fields %}<tr><th>Staff Port</th><td>{{ vault.koha_staff_port }}</td></tr>{% endif %}
+            {% if 'koha_admin_user' in selected_fields %}<tr><th>Master Admin User</th><td>{{ vault.koha_admin_user }}</td></tr>{% endif %}
+            {% if 'koha_admin_pass' in selected_fields %}<tr><th>Master Admin Password</th><td>{{ vault.koha_admin_pass }}</td></tr>{% endif %}
+            {% if 'koha_staff_user' in selected_fields %}<tr><th>Library Staff User</th><td>{{ vault.koha_staff_user }}</td></tr>{% endif %}
+            {% if 'koha_staff_pass' in selected_fields %}<tr><th>Library Staff Password</th><td>{{ vault.koha_staff_pass }}</td></tr>{% endif %}
+        </table>
+    </div>
+    {% endif %}
+
+    {% if 'mysql_root_user' in selected_fields or 'mysql_root_pass' in selected_fields or 'mysql_db_port' in selected_fields or 'koha_db_name' in selected_fields or 'koha_db_user' in selected_fields or 'koha_db_pass' in selected_fields or 'sip2_institution_id' in selected_fields or 'sip2_user' in selected_fields or 'sip2_pass' in selected_fields or 'sip2_telnet_port' in selected_fields or 'sip2_raw_port' in selected_fields or 'rfid_db_user' in selected_fields or 'rfid_db_pass' in selected_fields %}
+    <div class="section">
+        <h2>Database & Integrations</h2>
+        <table>
+            {% if 'mysql_root_user' in selected_fields %}<tr><th>MySQL Root User</th><td>{{ vault.mysql_root_user }}</td></tr>{% endif %}
+            {% if 'mysql_root_pass' in selected_fields %}<tr><th>MySQL Root Password</th><td>{{ vault.mysql_root_pass }}</td></tr>{% endif %}
+            {% if 'mysql_db_port' in selected_fields %}<tr><th>MySQL Port</th><td>{{ vault.mysql_db_port }}</td></tr>{% endif %}
+            {% if 'koha_db_name' in selected_fields %}<tr><th>Koha DB Name</th><td>{{ vault.koha_db_name }}</td></tr>{% endif %}
+            {% if 'koha_db_user' in selected_fields %}<tr><th>Koha DB User</th><td>{{ vault.koha_db_user }}</td></tr>{% endif %}
+            {% if 'koha_db_pass' in selected_fields %}<tr><th>Koha DB Password</th><td>{{ vault.koha_db_pass }}</td></tr>{% endif %}
+            {% if 'sip2_institution_id' in selected_fields %}<tr><th>SIP2 Institution ID</th><td>{{ vault.sip2_institution_id }}</td></tr>{% endif %}
+            {% if 'sip2_user' in selected_fields %}<tr><th>SIP2 User</th><td>{{ vault.sip2_user }}</td></tr>{% endif %}
+            {% if 'sip2_pass' in selected_fields %}<tr><th>SIP2 Password</th><td>{{ vault.sip2_pass }}</td></tr>{% endif %}
+            {% if 'sip2_telnet_port' in selected_fields %}<tr><th>SIP2 Telnet Port</th><td>{{ vault.sip2_telnet_port }}</td></tr>{% endif %}
+            {% if 'sip2_raw_port' in selected_fields %}<tr><th>SIP2 Raw Port</th><td>{{ vault.sip2_raw_port }}</td></tr>{% endif %}
+            {% if 'rfid_db_user' in selected_fields %}<tr><th>RFID DB User</th><td>{{ vault.rfid_db_user }}</td></tr>{% endif %}
+            {% if 'rfid_db_pass' in selected_fields %}<tr><th>RFID DB Password</th><td>{{ vault.rfid_db_pass }}</td></tr>{% endif %}
+        </table>
+    </div>
+    {% endif %}
+
+    {% if 'export_db_enabled' in selected_fields or 'plugin_enabled' in selected_fields or 'autobackup_local' in selected_fields or 'autobackup_gdrive' in selected_fields or 'ufw_global_ports' in selected_fields or 'ufw_restricted_ports' in selected_fields or 'ufw_allowed_ips' in selected_fields %}
+    <div class="section">
+        <h2>Security, Backups & Firewall</h2>
+        <table>
+            {% if 'export_db_enabled' in selected_fields %}<tr><th>Export DB (Staff UI)</th><td>{{ 'Enabled' if vault.export_db_enabled else 'Disabled' }}</td></tr>{% endif %}
+            {% if 'plugin_enabled' in selected_fields %}<tr><th>Koha Plugins</th><td>{{ 'Enabled' if vault.plugin_enabled else 'Disabled' }}</td></tr>{% endif %}
+            {% if 'autobackup_local' in selected_fields %}<tr><th>Local AutoBackup</th><td>{{ 'Enabled' if vault.autobackup_local else 'Disabled' }}</td></tr>{% endif %}
+            {% if 'autobackup_gdrive' in selected_fields %}<tr><th>Google Drive Backup</th><td>{{ 'Enabled' if vault.autobackup_gdrive else 'Disabled' }}</td></tr>{% endif %}
+            {% if 'ufw_global_ports' in selected_fields %}<tr><th>UFW Global Open Ports</th><td>{{ vault.ufw_global_ports }}</td></tr>{% endif %}
+            {% if 'ufw_restricted_ports' in selected_fields %}<tr><th>UFW Restricted Ports</th><td>{{ vault.ufw_restricted_ports }}</td></tr>{% endif %}
+            {% if 'ufw_allowed_ips' in selected_fields %}<tr><th>UFW Allowed IPs</th><td>{{ vault.ufw_allowed_ips }}</td></tr>{% endif %}
+        </table>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        Computer generated by RapidRadio Solutions Pvt. Ltd. &bull; This is an automated, secure document.
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koha Web Admin Suit</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/theme4.css">
+</head>
+<body class="light-mode"> 
+    <header>
+        <div class="brand">
+            <i class="fa-solid fa-layer-group"></i> KOHA<span style="font-weight:400; opacity:0.7">OPS</span>
+        </div>
+
+        <div id="header-stats">
+            <div class="h-stat" title="CPU Load Average">
+                <i class="fa-solid fa-microchip icon"></i>
+                <div class="h-bar-bg"><div id="bar-cpu" class="h-bar-fill" style="width: 0%; background: #f59e0b;"></div></div>
+                <span id="val-cpu" class="h-val">0.00</span>
+            </div>
+
+            <div class="h-stat" title="RAM Usage">
+                <i class="fa-solid fa-memory icon"></i>
+                <div class="h-bar-bg"><div id="bar-ram" class="h-bar-fill" style="width: 0%; background: #3b82f6;"></div></div>
+                <span id="val-ram" class="h-val">0 / 0</span>
+                <span id="lbl-ram" style="display:none"></span> </div>
+
+            <div class="h-stat" title="Disk Usage">
+                <i class="fa-solid fa-hard-drive icon"></i>
+                <div class="h-bar-bg"><div id="bar-disk" class="h-bar-fill" style="width: 0%; background: #10b981;"></div></div>
+                <span id="val-disk" class="h-val">0 / 0</span>
+                <span id="lbl-disk" style="display:none"></span> </div>
+        </div>
+        
+        <div style="display:flex; align-items:center; gap: 15px;">
+            <label class="h-toggle" title="Toggle Live Monitoring">
+                <input type="checkbox" id="auto_refresh" checked onchange="toggleAutoRefresh()"> 
+                <i class="fa-solid fa-heart-pulse"></i>
+            </label>
+
+            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+                <i class="fa-solid fa-circle-half-stroke"></i>
+            </button>
+
+            <div class="conn-bar">
+		<input id="client_code" placeholder="Client Code (e.g. LIB-001)">
+                <input id="host" placeholder="Tailscale IP">
+                <input id="user" value="koha" placeholder="User">
+                <button onclick="connectSSH()"><i class="fa-solid fa-plug"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <div class="layout">
+        <nav style="overflow-y: auto; max-height: calc(100vh - 70px); scrollbar-width: thin;">
+            <button class="active" onclick="tab('dash')"><i class="fa-solid fa-gauge"></i> Dashboard</button>
+            <button onclick="tab('tools')"><i class="fa-solid fa-toolbox"></i> Toolbox</button>
+            <button onclick="tab('install')"><i class="fa-solid fa-server"></i> Installer</button>
+            <button onclick="tab('restore')"><i class="fa-solid fa-clock-rotate-left"></i> Restore</button>
+            <button onclick="tab('backup')"><i class="fa-regular fa-hard-drive"></i> Backup</button>
+            <button onclick="tab('net')"><i class="fa-solid fa-shield-halved"></i> Network</button>
+            <button onclick="tab('sip')"><i class="fa-solid fa-share-nodes"></i> SIP2</button>
+            <button onclick="tab('users')"><i class="fa-solid fa-users-gear"></i> Users</button>
+            <button onclick="tab('terminal')"><i class="fa-solid fa-terminal"></i> Terminal</button>
+            <button onclick="tab('files')"><i class="fa-solid fa-folder-open"></i> Files</button>
+            <button onclick="tab('vault')" style="border-left: 4px solid #8b5cf6;"><i class="fa-solid fa-cloud-arrow-up"></i> Vault Sync</button>
+            <button class="danger" onclick="tab('danger')"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</button>
+        </nav>
+
+        <main>
+            <div id="dash" class="tab active">
+                <div class="dash-header">
+                    <h2>Instance Overview</h2>
+                    <div class="dash-controls">
+                        <button class="btn-tiny" onclick="runTask('health')"><i class="fa-solid fa-rotate"></i> Refresh</button>
+                        <button class="btn-tiny" style="color: var(--danger); border-color: var(--danger);" onclick="disconnect()"><i class="fa-solid fa-power-off"></i> Disconnect</button>
+                    </div>
+                </div>
+
+                <div class="grid-3">
+                    <div class="card glass-panel service-card" id="card-koha-common">
+                        <div class="svc-top">
+                            <div><i class="fa-solid fa-book-open"></i> Koha Core</div>
+                            <div class="status-dot" id="dot-koha-common"></div>
+                        </div>
+                        <button class="btn-tiny" onclick="restartSvc('koha-common')">Restart</button>
+                    </div>
+
+                    <div class="card glass-panel service-card" id="card-apache2">
+                        <div class="svc-top">
+                            <div><i class="fa-brands fa-linux"></i> Apache2</div>
+                            <div class="status-dot" id="dot-apache2"></div>
+                        </div>
+                        <button class="btn-tiny" onclick="restartSvc('apache2')">Restart</button>
+                    </div>
+
+                    <div class="card glass-panel service-card" id="card-mariadb">
+                        <div class="svc-top">
+                            <div><i class="fa-solid fa-database"></i> MariaDB</div>
+                            <div class="status-dot" id="dot-mariadb"></div>
+                        </div>
+                        <button class="btn-tiny" onclick="restartSvc('mariadb')">Restart</button>
+                    </div>
+
+                    <div class="card glass-panel service-card" id="card-memcached">
+                        <div class="svc-top">
+                            <div><i class="fa-solid fa-memory"></i> Memcached</div>
+                            <div class="status-dot" id="dot-memcached"></div>
+                        </div>
+                        <button class="btn-tiny" onclick="restartSvc('memcached')">Restart</button>
+                    </div>
+
+                    <div class="card glass-panel service-card" id="card-plack">
+                        <div class="svc-top">
+                            <div><i class="fa-solid fa-bolt"></i> Plack Starman</div>
+                            <div class="status-dot" id="dot-plack"></div>
+                        </div>
+                        <button class="btn-tiny" onclick="restartSvc('plack')">Restart All</button>
+                    </div>
+                    
+                    <div class="card glass-panel service-card" id="card-cron">
+                        <div class="svc-top">
+                            <div><i class="fa-solid fa-clock"></i> Cron Jobs</div>
+                            <div class="status-dot" id="dot-cron"></div>
+                        </div>
+                        <button class="btn-tiny" onclick="restartSvc('cron')">Restart</button>
+                    </div>
+
+                    <div class="card glass-panel service-card" id="card-sip2">
+                        <div class="svc-top">
+                            <div><i class="fa-solid fa-share-nodes"></i> SIP2 Server</div>
+                            <div class="status-dot" id="dot-sip2"></div>
+                        </div>
+                        <button class="btn-tiny" onclick="restartSvc('sip2')">Restart All</button>
+                    </div>
+                </div>
+
+                <div class="deep-scan-section glass-panel">
+                    <h3><i class="fa-solid fa-magnifying-glass-chart"></i> Deep Inspection</h3>
+                    <div class="input-group">
+                        <select id="inspect_inst_list">
+                            <option>Loading instances...</option>
+                        </select>
+                        <button class="btn-action" onclick="fetchDeepStats()">Inspect Instance</button>
+                    </div>
+
+                    <div id="secrets_panel" class="secrets-grid hidden">
+                        <div class="grid-3" style="margin-top:20px;">
+                            <div class="info-box">
+                                <h4>Credentials</h4>
+                                <p><strong>DB Name:</strong> <span class="neon-text" id="d_dbname">...</span></p>
+                                <p><strong>DB User:</strong> <span class="neon-text" id="d_dbuser">...</span></p>
+                                <p><strong>DB Pass:</strong> <span class="text-danger blur-text" onclick="this.classList.toggle('blur-text')" id="d_dbpass">...</span></p>
+                                <p><strong>Version:</strong> <span id="d_ver">...</span></p>
+                            </div>
+
+                            <div class="info-box">
+                                <h4>Access Points</h4>
+                                <a href="#" target="_blank" id="link_staff" class="link-btn">Staff Interface</a>
+                                <a href="#" target="_blank" id="link_opac" class="link-btn">OPAC Interface</a>
+                            </div>
+
+                            <div class="info-box">
+                                <h4>Collection Stats</h4>
+                                <div class="stats-row">
+                                    <div><small>Items</small><pre id="stat_items">...</pre></div>
+                                    <div><small>Patrons</small><pre id="stat_users">...</pre></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tools" class="tab">
+                <h2>Maintenance Tools</h2>
+                <div class="card glass-panel">
+                    <h3>Instance Tasks</h3>
+                    <div class="input-group">
+                        <input id="tool_inst" placeholder="Target Instance (e.g. library)">
+                        <button class="btn-action" onclick="runTask('toolbox', {action: 'zebra', inst: val('tool_inst')})">Rebuild Zebra</button>
+                        <button class="btn-action" onclick="runTask('toolbox', {action: 'perms', inst: val('tool_inst')})">Fix Permissions</button>
+                    </div>
+                </div>
+                
+                <div class="card glass-panel">
+                    <h3>SQL Runner</h3>
+                    <textarea id="sql_query" rows="5" placeholder="SELECT * FROM items WHERE..."></textarea>
+                    <button class="btn-action full-width" onclick="runTask('sql', {inst: val('tool_inst'), query: val('sql_query')})">Execute Query</button>
+                </div>
+            </div>
+
+            <div id="install" class="tab">
+                <h2>New Installation</h2>
+                <div class="card glass-panel">
+                    <p>Deploy a new Koha instance with automatic configuration.</p>
+                    <div class="grid-2">
+                        <div>
+                            <label>Koha Version</label>
+                            <input id="i_ver" placeholder="e.g. 24.05">
+                        </div>
+                        <div>
+                            <label>Instance Name</label>
+                            <input id="i_name" placeholder="e.g. mainlibrary">
+                        </div>
+                        <div>
+                            <label>Staff Port</label>
+                            <input id="i_sport" placeholder="e.g. 8080">
+                        </div>
+                        <div>
+                            <label>OPAC Port</label>
+                            <input id="i_oport" placeholder="e.g. 8081">
+                        </div>
+                    </div>
+                    
+                    <div style="margin: 20px 0; display: flex; gap: 20px;">
+                        <label><input type="checkbox" id="i_plack" checked> Enable Plack (High Performance)</label>
+                        <label><input type="checkbox" id="i_fix" checked> Auto-Fix Configuration Files</label>
+                    </div>
+                    
+                    <button class="btn-action full-width" onclick="installKoha()">Deploy Instance</button>
+                </div>
+            </div>
+
+            <div id="restore" class="tab">
+                <h2>Database Restore</h2>
+                <div class="card glass-panel">
+                    <div class="grid-2">
+                        <div>
+                            <label>Target Instance</label>
+                            <input id="r_inst" placeholder="e.g. library">
+                        </div>
+                        <div>
+                            <label>SQL File</label>
+                            <input type="file" id="r_file" style="padding: 7px;">
+                        </div>
+                    </div>
+                    <label style="display:block; margin: 15px 0;">
+                        <input type="checkbox" id="r_zebra" checked> Rebuild Zebra & Restart Plack after restore
+                    </label>
+                    <button class="btn-warn full-width" onclick="uploadRestore()">Upload & Restore Database</button>
+                </div>
+            </div>
+
+            <div id="backup" class="tab">
+                <h2>Backup Center</h2>
+                
+                <div class="card glass-panel" style="border-left: 4px solid var(--success);">
+                    <h3><i class="fa-solid fa-bolt"></i> Manual Backup</h3>
+                    <p>Trigger an immediate full database backup for all instances.</p>
+                    <button class="btn-action" onclick="runTask('backup_now')">Run Immediate Backup</button>
+                </div>
+
+                <div class="card glass-panel">
+                    <h3><i class="fa-solid fa-calendar-days"></i> Automated Schedule</h3>
+                    <p class="text-muted">Configure daily offsite backups (Defaults to 5:00 PM).</p>
+
+                    <div class="inner-dark">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <input type="checkbox" id="b_gdrive" onchange="toggleGdrive()" style="width: auto;">
+                            <label for="b_gdrive" style="cursor: pointer; font-weight:bold;">Enable Cloud Sync (Rclone)</label>
+                        </div>
+                        
+                        <div class="grid-2">
+                            <input id="b_remote" placeholder="Remote Name (e.g. gdrive)" disabled>
+                            <input id="b_path" placeholder="Remote Path (e.g. /koha-backups)" disabled>
+                        </div>
+                    </div>
+
+                    <button class="btn-warn full-width" onclick="configureBackup()">Save Configuration</button>
+                </div>
+            </div>
+
+            <div id="net" class="tab">
+                <h2>Network Security</h2>
+                
+                <div class="card glass-panel">
+                    <h3><i class="fa-solid fa-shield-cat"></i> Firewall (UFW)</h3>
+                    <div style="margin-bottom: 15px;">
+                        <label>Global Open Ports</label>
+                        <input id="u_ports" placeholder="80, 443, 8080">
+                        <small class="text-muted">Ports accessible to the entire internet.</small>
+                    </div>
+                    
+                    <div class="grid-2">
+                        <div>
+                            <label>Restricted Ports</label>
+                            <input id="u_rports" placeholder="8051, 22">
+                        </div>
+                        <div>
+                            <label>Allowed IPs</label>
+                            <input id="u_rips" placeholder="192.168.1.50">
+                        </div>
+                    </div>
+                    
+                    <button class="btn-action full-width" onclick="runTask('ufw', {ports: val('u_ports'), rports: val('u_rports'), rips: val('u_rips')})">
+                        Apply Rules
+                    </button>
+                </div>
+
+                <div class="card glass-panel">
+                    <h3><i class="fa-solid fa-lock"></i> Stunnel Generator</h3>
+                    
+                    <div class="inner-dark">
+                        <div style="display: flex; gap: 20px; margin-bottom: 15px;">
+                            <label><input type="checkbox" id="s_psk"> Use Pre-Shared Key (PSK)</label>
+                        </div>
+                        
+                        <div style="display: flex; gap: 20px; margin-bottom: 15px; align-items: center;">
+                            <span style="opacity:0.7">Client IP:</span>
+                            <label><input type="radio" name="ip_mode" value="auto" checked onchange="toggleIP(this)"> Auto</label>
+                            <label><input type="radio" name="ip_mode" value="manual" onchange="toggleIP(this)"> Manual</label>
+                        </div>
+
+                        <div class="grid-2">
+                             <input id="s_name" placeholder="Certificate Name (e.g. library_secure)">
+                             <input id="s_manual_ip" placeholder="Server IP (e.g. 100.x.x.x)" disabled>
+                        </div>
+                    </div>
+
+                    <button class="btn-warn full-width" onclick="genStunnel()">Generate Configuration</button>
+                </div>
+            </div>
+
+            <div id="sip" class="tab">
+                <h2>SIP2 Configuration</h2>
+                <div class="card glass-panel">
+                    <div class="grid-2">
+                        <div>
+                            <label>Instance</label>
+                            <input id="sip_inst" placeholder="library">
+                        </div>
+                        <div>
+                            <label>Institution ID</label>
+                            <input id="sip_iid" value="MAIN">
+                        </div>
+                        <div>
+                            <label>SIP User</label>
+                            <input id="sip_user" placeholder="sip_user">
+                        </div>
+                        <div>
+                            <label>SIP Password</label>
+                            <input id="sip_pass" placeholder="SecretPass">
+                        </div>
+                        <div>
+                            <label>Telnet Port</label>
+                            <input id="sip_telnet" value="8023">
+                        </div>
+                        <div>
+                            <label>Raw Port</label>
+                            <input id="sip_raw" value="6001">
+                        </div>
+                    </div>
+                    <button class="btn-action full-width" onclick="configureSIP()">Enable SIP2 Service</button>
+                </div>
+            </div>
+
+            <div id="users" class="tab">
+                <h2>User Management</h2>
+                
+                <div class="card glass-panel">
+                    <h3>Create Superlibrarian</h3>
+                    <div class="input-group">
+                        <input id="u_inst" placeholder="Instance Name">
+                        <button class="btn-action" onclick="fetchUserData()" style="width: auto;">Fetch Branches</button>
+                    </div>
+                    
+                    <div class="grid-2">
+                        <input id="u_card" placeholder="Cardnumber">
+                        <input id="u_name" placeholder="Username">
+                        <input id="u_pass" placeholder="Password">
+                        <select id="u_branch"><option value="">Select Branch...</option></select>
+                        <select id="u_cat"><option value="">Select Category...</option></select>
+                    </div>
+                    
+                    <button class="btn-action full-width" onclick="createSuper()">Create Admin User</button>
+                </div>
+
+                <div class="card glass-panel">
+                    <h3>MySQL User Management</h3>
+                    <div class="grid-2">
+                        <input id="db_name" placeholder="DB Name">
+                        <input id="db_host" value="%" placeholder="Host (%)">
+                        <input id="db_user" placeholder="New DB User">
+                        <input id="db_pass" placeholder="New DB Password">
+                    </div>
+                    
+                    <div style="margin: 15px 0;">
+                        <label style="display:block; margin-bottom: 5px; font-size:0.85rem">SQL Object File (Optional):</label>
+                        <input type="file" id="db_file">
+                    </div>
+
+                    <button class="btn-warn full-width" onclick="createDBUser()">Create User & Import SQL</button>
+                </div>
+            </div>
+
+            <div id="terminal" class="tab">
+                <div class="dash-header">
+                    <h2>Interactive System Terminal</h2>
+                    <div class="dash-controls">
+                        <button id="btn-term-connect" class="btn-tiny" onclick="initTerminal()">
+                            <i class="fa-solid fa-power-off"></i> Connect Shell
+                        </button>
+                        
+                        <button id="btn-term-disconnect" class="btn-tiny" style="display:none; color:var(--danger); border-color:var(--danger)" onclick="disconnectTerminal()">
+                            <i class="fa-solid fa-plug-circle-xmark"></i> Disconnect
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card glass-panel" style="padding: 0; overflow: hidden; height: 600px; background: #0f172a;">
+                    <div id="xterm-container" style="height: 100%; width: 100%;"></div>
+                </div>
+            </div>
+
+            <div id="files" class="tab">
+                <div class="dash-header">
+                    <h2>File Manager</h2>
+                    <div class="dash-controls">
+                        <input type="file" id="fm_upload_input" style="display:none" onchange="uploadFMFile()">
+                        <button class="btn-tiny" onclick="document.getElementById('fm_upload_input').click()">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Upload Here
+                        </button>
+                        <button class="btn-tiny" onclick="refreshFM()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+                    </div>
+                </div>
+
+                <div class="card glass-panel" style="padding:0; overflow:hidden;">
+                    <div class="fm-bar" style="padding: 10px 15px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:10px;">
+                        <button class="btn-tiny" onclick="fmUp()"><i class="fa-solid fa-arrow-up"></i> Up</button>
+                        <input id="fm_path" value="/home" style="flex:1; background:transparent; border:none; color:white; font-family:monospace;" readonly>
+                    </div>
+
+                    <div class="fm-list" style="max-height: 500px; overflow-y: auto;">
+                        <table style="width:100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: rgba(255,255,255,0.05); text-align:left;">
+                                    <th style="padding:10px;"><i class="fa-regular fa-file"></i> Name</th>
+                                    <th style="padding:10px; width:100px;">Size</th>
+                                    <th style="padding:10px; width:80px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fm_table_body">
+                                <tr><td colspan="3" style="padding:20px; text-align:center; color:#64748b;">Connect and click Refresh...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="vault" class="tab">
+                <h2><i class="fa-solid fa-cloud-arrow-up"></i> CMS Vault Sync (Human-in-the-Loop)</h2>
+                
+                <div class="card glass-panel" style="border-left: 4px solid #8b5cf6;">
+                    <p>Extract existing data from the server, manually fill in the missing passwords, and push the complete profile to your central CMS Vault.</p>
+                    <div class="input-group">
+                        <input id="v_inst" placeholder="Target Koha Instance (e.g. library)">
+                        <button class="btn-action" onclick="extractVault()"><i class="fa-solid fa-magnifying-glass"></i> 1. Extract Server Data</button>
+                    </div>
+                </div>
+
+                <div id="vault_form" class="hidden" style="margin-top: 20px;">
+                    <div class="grid-2">
+                        <div class="card glass-panel">
+                            <h3 style="color:#8b5cf6;"><i class="fa-solid fa-server"></i> Server & Access</h3>
+                            <label>OS Details</label><input id="v_os_details" readonly style="opacity:0.7;">
+                            <label>System IP</label><input id="v_system_ip" readonly style="opacity:0.7;">
+                            <label>Current System User</label><input id="v_system_user" style="opacity:0.7;">
+                            
+                            <label>System Password</label>
+                            <div style="position: relative;">
+                                <input type="password" id="v_system_pass" placeholder="Manual Entry" style="width: 100%; padding-right: 30px;">
+                                <i class="fa-solid fa-eye" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #94a3b8;" onclick="togglePwd('v_system_pass', this)"></i>
+                            </div>
+                            
+                            <div class="grid-2" style="margin-top:10px;">
+                                <div><label>Anydesk ID</label><input id="v_anydesk_id"></div>
+                                <div>
+                                    <label>Anydesk Pass</label>
+                                    <div style="position: relative;">
+                                        <input type="password" id="v_anydesk_pw" placeholder="Manual Entry" style="width: 100%; padding-right: 30px;">
+                                        <i class="fa-solid fa-eye" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #94a3b8;" onclick="togglePwd('v_anydesk_pw', this)"></i>
+                                    </div>
+                                </div>
+                                <div><label>Teamviewer ID</label><input id="v_teamviewer_id"></div>
+                                <div>
+                                    <label>Teamviewer Pass</label>
+                                    <div style="position: relative;">
+                                        <input type="password" id="v_teamviewer_pw" placeholder="Manual Entry" style="width: 100%; padding-right: 30px;">
+                                        <i class="fa-solid fa-eye" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #94a3b8;" onclick="togglePwd('v_teamviewer_pw', this)"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card glass-panel">
+                            <h3 style="color:#3b82f6;"><i class="fa-solid fa-database"></i> Koha Core & Database</h3>
+                            <div class="grid-2">
+                                <div><label>Staff Port</label><input id="v_koha_staff_port"></div>
+                                <div><label>OPAC Port</label><input id="v_koha_opac_port"></div>
+                            </div>
+                            <label style="margin:10px 0; display:block;"><input type="checkbox" id="v_plack_enabled"> Plack Enabled</label>
+                            
+                            <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
+                            
+                            <div class="grid-2">
+                                <div><label>MySQL Root User</label><input id="v_mysql_root_user"></div>
+                                <div>
+                                    <label>MySQL Root Pass</label>
+                                    <div style="position: relative;">
+                                        <input type="password" id="v_mysql_root_pass" style="width: 100%; padding-right: 30px;">
+                                        <i class="fa-solid fa-eye" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #94a3b8;" onclick="togglePwd('v_mysql_root_pass', this)"></i>
+                                    </div>
+                                </div>
+                                <div><label>Koha DB Name</label><input id="v_koha_db_name"></div>
+                                <div><label>MySQL Port</label><input id="v_mysql_db_port"></div>
+                            </div>
+                            <label>Koha DB User</label><input id="v_koha_db_user">
+                            
+                            <label>Koha DB Password</label>
+                            <div style="position: relative;">
+                                <input type="password" id="v_koha_db_pass" style="width: 100%; padding-right: 30px;">
+                                <i class="fa-solid fa-eye" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #94a3b8;" onclick="togglePwd('v_koha_db_pass', this)"></i>
+                            </div>
+                        </div>
+
+                        <div class="card glass-panel">
+                            <h3 style="color:#10b981;"><i class="fa-solid fa-network-wired"></i> Network & Integrations</h3>
+                            <div class="grid-2">
+                                <div><label>SIP2 Institution</label><input id="v_sip2_institution_id"></div>
+                                <div><label>SIP2 User</label><input id="v_sip2_user"></div>
+                                <div>
+                                    <label>SIP2 Pass</label>
+                                    <div style="position: relative;">
+                                        <input type="password" id="v_sip2_pass" style="width: 100%; padding-right: 30px;">
+                                        <i class="fa-solid fa-eye" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #94a3b8;" onclick="togglePwd('v_sip2_pass', this)"></i>
+                                    </div>
+                                </div>
+                                <div><label>SIP2 Telnet / Raw</label>
+                                    <div style="display:flex; gap:5px;">
+                                        <input id="v_sip2_telnet_port" style="width:50%" placeholder="8023">
+                                        <input id="v_sip2_raw_port" style="width:50%" placeholder="6001">
+                                    </div>
+                                </div>
+                                <div><label>RFID DB User</label><input id="v_rfid_db_user" placeholder="Manual Entry"></div>
+                                <div>
+                                    <label>RFID DB Pass</label>
+                                    <div style="position: relative;">
+                                        <input type="password" id="v_rfid_db_pass" placeholder="Manual Entry" style="width: 100%; padding-right: 30px;">
+                                        <i class="fa-solid fa-eye" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #94a3b8;" onclick="togglePwd('v_rfid_db_pass', this)"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
+                            <label>UFW Global Open Ports</label><input id="v_ufw_global_ports">
+                            <label>UFW Restricted Ports</label><input id="v_ufw_restricted_ports">
+                            <label>UFW Allowed IPs</label><input id="v_ufw_allowed_ips">
+                        </div>
+
+                        <div class="card glass-panel">
+                            <h3 style="color:#f59e0b;"><i class="fa-solid fa-users"></i> App Logins & Settings</h3>
+                            <div class="grid-2">
+                                <div><label>Admin User</label><input id="v_koha_admin_user" placeholder="Manual Entry"></div>
+                                <div>
+                                    <label>Admin Pass</label>
+                                    <div style="position: relative;">
+                                        <input type="password" id="v_koha_admin_pass" placeholder="Manual Entry" style="width: 100%; padding-right: 30px;">
+                                        <i class="fa-solid fa-eye" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #94a3b8;" onclick="togglePwd('v_koha_admin_pass', this)"></i>
+                                    </div>
+                                </div>
+                                <div><label>Staff User</label><input id="v_koha_staff_user" placeholder="Manual Entry"></div>
+                                <div>
+                                    <label>Staff Pass</label>
+                                    <div style="position: relative;">
+                                        <input type="password" id="v_koha_staff_pass" placeholder="Manual Entry" style="width: 100%; padding-right: 30px;">
+                                        <i class="fa-solid fa-eye" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #94a3b8;" onclick="togglePwd('v_koha_staff_pass', this)"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
+                            <label style="display:block;"><input type="checkbox" id="v_autobackup_local"> Local Auto-Backup Enabled</label>
+                            <label style="display:block;"><input type="checkbox" id="v_autobackup_gdrive"> GDrive Auto-Backup Enabled</label>
+                            <label style="display:block;"><input type="checkbox" id="v_export_db_enabled"> Backup DB via Tools Enabled</label>
+                            <label style="display:block;"><input type="checkbox" id="v_plugin_enabled"> Koha Plugins Enabled</label>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-warn full-width" style="margin-top:20px; font-size:1.2rem; padding:15px; background: #8b5cf6;" onclick="pushVault()">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> 2. Push Final Configuration to CMS Vault
+                    </button>
+                </div>
+            </div>
+
+            <div id="danger" class="tab">
+                <h2 style="color: var(--danger)">Danger Zone</h2>
+                <p>Destructive actions. These cannot be undone.</p>
+
+                <div class="card glass-panel" style="border-left: 4px solid var(--danger);">
+                    <h3>Delete Instance</h3>
+                    <p>Permanently remove a Koha instance and its database.</p>
+                    <div class="input-group">
+                        <input id="rm_inst_name" placeholder="Instance Name to Delete">
+                        <button class="btn-danger" onclick="rmInstance()">Delete Instance</button>
+                    </div>
+                </div>
+
+                <div class="card glass-panel" style="border-color: var(--danger);">
+                    <h3>System Nukes</h3>
+                    
+                    <div class="grid-3">
+                         <button class="btn-danger full-width" onclick="nukeStunnel()">Remove Stunnel</button>
+                         <button class="btn-danger full-width" onclick="nukeTailscale()">Remove Tailscale</button>
+                         <button class="btn-danger full-width" onclick="nukeKoha()">Uninstall Koha</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="resizer" title="Drag to resize"></div> 
+
+    <div id="console">
+        <div style="color: #64748b; margin-bottom: 10px;">// TERMINAL OUTPUT -------------------</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        
+        // Utils
+        const val = (id) => document.getElementById(id).value;
+        const isChk = (id) => document.getElementById(id).checked;
+        const tab = (id) => {
+            document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(e => e.classList.remove('active'));
+            
+            document.getElementById(id).classList.add('active');
+            
+            // Find the button that corresponds to this tab and make it active
+            document.querySelectorAll('nav button').forEach(btn => {
+                if(btn.getAttribute('onclick').includes(id)) {
+                    btn.classList.add('active');
+                }
+            });
+        };
+
+        // Socket Logic
+        socket.on('log_update', (d) => {
+            const c = document.getElementById('console');
+            c.innerHTML += `<div class="${d.type}">> ${d.msg}</div>`;
+            c.scrollTop = c.scrollHeight;
+        });
+
+        // Actions
+        function connectSSH() {
+            socket.emit('connect_ssh', {
+            host: val('host'), 
+            user: val('user')
+            });
+        }
+
+        function runTask(name, args={}) {
+	    //Update for CMS API
+	    args['client_code'] = document.getElementById('client_code').value;
+            socket.emit('task', {name: name, args: args});
+        }
+
+        function installKoha() {
+            runTask('install', {
+                ver: val('i_ver'), name: val('i_name'), 
+                sport: val('i_sport'), oport: val('i_oport'), 
+                plack: isChk('i_plack'), fix: isChk('i_fix')
+            });
+        }
+
+        function uploadRestore() {
+            const fileInput = document.getElementById('r_file');
+            if(fileInput.files.length === 0) {
+                alert("Please select a file!"); 
+                return;
+            }
+
+            const fd = new FormData();
+            fd.append('file', fileInput.files[0]);
+            
+            const btn = document.querySelector('#restore .btn-warn');
+            const originalText = btn.innerText;
+            btn.innerText = "⏳ UPLOADING...";
+            btn.disabled = true;
+
+            // Step 1: Upload via HTTP
+            fetch('/upload-db', {method: 'POST', body: fd})
+            .then(r => r.json())
+            .then(d => {
+                if(d.status === 'uploaded') {
+                    // Step 2: Trigger Task via Socket
+                    btn.innerText = "⏳ RESTORING...";
+                    socket.emit('start_restore', {
+                        inst: val('r_inst'),
+                        path: d.path,
+                        zebra: document.getElementById('r_zebra').checked
+                    });
+                    
+                    alert("Upload complete. Restore started in background.");
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                } else {
+                    alert("Upload failed on server.");
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            })
+            .catch(e => {
+                alert("Upload Error: " + e);
+                btn.innerText = originalText;
+                btn.disabled = false;
+            });
+        }
+        // Backup Config
+        function toggleGdrive() {
+            const on = document.getElementById('b_gdrive').checked;
+            const remoteInput = document.getElementById('b_remote');
+            const pathInput = document.getElementById('b_path');
+            
+            remoteInput.disabled = !on;
+            pathInput.disabled = !on;
+            
+            // Visual feedback
+            if(on) {
+                remoteInput.style.opacity = "1";
+                pathInput.style.opacity = "1";
+            } else {
+                remoteInput.style.opacity = "0.5";
+                pathInput.style.opacity = "0.5";
+            }
+        }
+
+        function configureBackup() {
+            runTask('backup_config', {
+                gdrive: document.getElementById('b_gdrive').checked,
+                remote: document.getElementById('b_remote').value,
+                path: document.getElementById('b_path').value
+            });
+        }
+
+        //Stunnel
+        // New Listener for File Downloads (Socket-Safe)
+        socket.on('download_ready', (d) => {
+            // Create a hidden iframe to trigger download without breaking WebSocket
+            let iframe = document.getElementById('dl-frame');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'dl-frame';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+            }
+            iframe.src = `/download/${d.filename}`;
+        });
+        
+        // Add a Reconnect Listener to warn you if it DOES break
+        socket.on('disconnect', () => {
+            console.log("⚠️ Socket Disconnected!");
+            const btn = document.querySelector('.conn-bar button');
+            if(btn) { btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Lost Conn'; btn.style.background = 'var(--danger)'; }
+        });
+
+        // Stunnel UI Logic
+        function toggleIP(radio) {
+            const input = document.getElementById('s_manual_ip');
+            if (radio.value === 'manual') {
+                input.disabled = false;
+                input.style.opacity = "1";
+            } else {
+                input.disabled = true;
+                input.style.opacity = "0.5";
+            }
+        }
+
+        function genStunnel() {
+            const isAuto = document.querySelector('input[name="ip_mode"]:checked').value === 'auto';
+            runTask('stunnel', {
+                name: val('s_name'),
+                psk: isChk('s_psk'),
+                auto: isAuto,
+                man: val('s_manual_ip')
+            });
+        }
+
+        // SIP2 Config
+        function configureSIP() {
+            runTask('sip2', {
+                inst: val('sip_inst'),
+                user: val('sip_user'),
+                pass: val('sip_pass'),
+                telnet: val('sip_telnet'),
+                raw: val('sip_raw'),
+                iid: val('sip_iid')
+            });
+        }
+
+        // --- USERS SECTION ---
+        
+        // 1. Fetch Branches & Categories
+        function fetchUserData() {
+            const inst = val('u_inst');
+            if(!inst) { alert("Enter instance name!"); return; }
+            const btn = document.querySelector('#users button');
+            const txt = btn.innerText;
+            btn.innerText = "⏳ FETCHING...";
+            runTask('fetch_user_data', {inst: inst});
+            setTimeout(() => btn.innerText = txt, 2000);
+        }
+
+        // Listener for Data Return
+        socket.on('user_data_ready', (d) => {
+            const br = document.getElementById('u_branch');
+            const cat = document.getElementById('u_cat');
+            
+            br.innerHTML = ''; 
+            cat.innerHTML = '';
+            
+            d.branches.forEach(b => {
+                let opt = document.createElement('option');
+                opt.value = b.code;
+                opt.innerText = b.name;
+                br.appendChild(opt);
+            });
+
+            d.categories.forEach(c => {
+                let opt = document.createElement('option');
+                opt.value = c.code;
+                opt.innerText = c.name;
+                // Auto-select "Superlibrarian" if found
+                if(c.name.includes("Super") || c.code.includes("S")) opt.selected = true;
+                cat.appendChild(opt);
+            });
+            alert(`Loaded ${d.branches.length} branches and ${d.categories.length} categories.`);
+        });
+
+        // 2. Create Superlibrarian
+        function createSuper() {
+            runTask('create_super', {
+                inst: val('u_inst'),
+                card: val('u_card'),
+                user: val('u_name'),
+                pass: val('u_pass'),
+                branch: val('u_branch'),
+                category: val('u_cat')
+            });
+        }
+
+        // 3. Create MySQL User & Upload
+        function createDBUser() {
+            const fd = new FormData();
+            
+            // Optional File Check
+            const f = document.getElementById('db_file');
+            if(f.files.length > 0) fd.append('file', f.files[0]);
+
+            const btn = document.querySelector('#users .btn-warn');
+            const txt = btn.innerText;
+            btn.innerText = "⏳ PROCESSING...";
+            btn.disabled = true;
+
+            // Step 1: Upload (if any file) via HTTP
+            fetch('/upload-sp', {method: 'POST', body: fd})
+            .then(r => r.json())
+            .then(d => {
+                // Step 2: Trigger Task via Socket
+                socket.emit('start_db_user', {
+                    dbname: val('db_name'),
+                    host: val('db_host'),
+                    dbuser: val('db_user'),
+                    dbpass: val('db_pass'),
+                    sql_file: d.path // Path returned from server
+                });
+                
+                alert("Task Started. Check logs.");
+                btn.innerText = txt;
+                btn.disabled = false;
+            })
+            .catch(e => {
+                alert("Error: " + e);
+                btn.innerText = txt;
+                btn.disabled = false;
+            });
+        }
+
+        // --- VAULT SYNC LOGIC ---
+        // Password Visibility Toggle
+        function togglePwd(inputId, iconElement) {
+            const input = document.getElementById(inputId);
+            if (input.type === "password") {
+                input.type = "text";
+                iconElement.classList.remove("fa-eye");
+                iconElement.classList.add("fa-eye-slash");
+            } else {
+                input.type = "password";
+                iconElement.classList.remove("fa-eye-slash");
+                iconElement.classList.add("fa-eye");
+            }
+        }
+
+        function extractVault() {
+            const inst = val('v_inst');
+            if(!inst) { alert('Enter instance name to extract!'); return; }
+            
+            const btn = document.querySelector('#vault .btn-action');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Extracting...';
+            
+            runTask('extract_vault', {inst: inst});
+        }
+
+        socket.on('vault_extraction_ready', (d) => {
+            document.querySelector('#vault .btn-action').innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> 1. Extract Server Data';
+            document.getElementById('vault_form').classList.remove('hidden');
+            
+            // Populate all fields
+            document.getElementById('v_os_details').value = d.os_details || '';
+            document.getElementById('v_system_ip').value = d.system_ip || '';
+            document.getElementById('v_system_user').value = d.system_user || '';
+            document.getElementById('v_system_pass').value = d.system_pass || '';
+            
+            document.getElementById('v_anydesk_id').value = d.anydesk_id || '';
+            document.getElementById('v_anydesk_pw').value = d.anydesk_pw || '';
+            document.getElementById('v_teamviewer_id').value = d.teamviewer_id || '';
+            document.getElementById('v_teamviewer_pw').value = d.teamviewer_pw || '';
+            
+            document.getElementById('v_koha_staff_port').value = d.koha_staff_port || '';
+            document.getElementById('v_koha_opac_port').value = d.koha_opac_port || '';
+            document.getElementById('v_plack_enabled').checked = d.plack_enabled || false;
+            
+            document.getElementById('v_mysql_root_user').value = d.mysql_root_user || '';
+            document.getElementById('v_mysql_root_pass').value = d.mysql_root_pass || '';
+            document.getElementById('v_mysql_db_port').value = d.mysql_db_port || '';
+            document.getElementById('v_koha_db_name').value = d.koha_db_name || '';
+            document.getElementById('v_koha_db_user').value = d.koha_db_user || '';
+            document.getElementById('v_koha_db_pass').value = d.koha_db_pass || '';
+            
+            document.getElementById('v_sip2_institution_id').value = d.sip2_institution_id || '';
+            document.getElementById('v_sip2_user').value = d.sip2_user || '';
+            document.getElementById('v_sip2_pass').value = d.sip2_pass || '';
+            document.getElementById('v_sip2_telnet_port').value = d.sip2_telnet_port || '';
+            document.getElementById('v_sip2_raw_port').value = d.sip2_raw_port || '';
+            
+            document.getElementById('v_rfid_db_user').value = d.rfid_db_user || '';
+            document.getElementById('v_rfid_db_pass').value = d.rfid_db_pass || '';
+            
+            document.getElementById('v_ufw_global_ports').value = d.ufw_global_ports || '';
+            document.getElementById('v_ufw_restricted_ports').value = d.ufw_restricted_ports || '';
+            document.getElementById('v_ufw_allowed_ips').value = d.ufw_allowed_ips || '';
+            
+            document.getElementById('v_koha_admin_user').value = d.koha_admin_user || '';
+            document.getElementById('v_koha_admin_pass').value = d.koha_admin_pass || '';
+            document.getElementById('v_koha_staff_user').value = d.koha_staff_user || '';
+            document.getElementById('v_koha_staff_pass').value = d.koha_staff_pass || '';
+            
+            document.getElementById('v_autobackup_local').checked = d.autobackup_local || false;
+            document.getElementById('v_autobackup_gdrive').checked = d.autobackup_gdrive || false;
+            document.getElementById('v_export_db_enabled').checked = d.export_db_enabled || false;
+            document.getElementById('v_plugin_enabled').checked = d.plugin_enabled || false;
+            
+            alert("Extraction complete! Please review the data, fill in missing passwords, and click Push.");
+        });
+
+        function pushVault() {
+            const client_code = val('client_code');
+            if(!client_code) { alert("Missing Client Code at the top of the screen!"); return; }
+
+            // Gather all UI fields into a JSON payload
+            const payload = {
+                os_details: val('v_os_details'),
+                system_ip: val('v_system_ip'),
+                system_user: val('v_system_user'),
+                system_pass: val('v_system_pass'),
+                
+                anydesk_id: val('v_anydesk_id'),
+                anydesk_pw: val('v_anydesk_pw'),
+                teamviewer_id: val('v_teamviewer_id'),
+                teamviewer_pw: val('v_teamviewer_pw'),
+                
+                koha_instance: val('v_inst'),
+                koha_staff_port: val('v_koha_staff_port'),
+                koha_opac_port: val('v_koha_opac_port'),
+                plack_enabled: isChk('v_plack_enabled'),
+                
+                mysql_root_user: val('v_mysql_root_user'),
+                mysql_root_pass: val('v_mysql_root_pass'),
+                mysql_db_port: val('v_mysql_db_port'),
+                koha_db_name: val('v_koha_db_name'),
+                koha_db_user: val('v_koha_db_user'),
+                koha_db_pass: val('v_koha_db_pass'),
+                
+                sip2_institution_id: val('v_sip2_institution_id'),
+                sip2_user: val('v_sip2_user'),
+                sip2_pass: val('v_sip2_pass'),
+                sip2_telnet_port: val('v_sip2_telnet_port'),
+                sip2_raw_port: val('v_sip2_raw_port'),
+                
+                rfid_db_user: val('v_rfid_db_user'),
+                rfid_db_pass: val('v_rfid_db_pass'),
+                
+                ufw_global_ports: val('v_ufw_global_ports'),
+                ufw_restricted_ports: val('v_ufw_restricted_ports'),
+                ufw_allowed_ips: val('v_ufw_allowed_ips'),
+                
+                koha_admin_user: val('v_koha_admin_user'),
+                koha_admin_pass: val('v_koha_admin_pass'),
+                koha_staff_user: val('v_koha_staff_user'),
+                koha_staff_pass: val('v_koha_staff_pass'),
+                
+                autobackup_local: isChk('v_autobackup_local'),
+                autobackup_gdrive: isChk('v_autobackup_gdrive'),
+                export_db_enabled: isChk('v_export_db_enabled'),
+                plugin_enabled: isChk('v_plugin_enabled')
+            };
+
+            runTask('push_vault', { client_code: client_code, payload: payload });
+        }
+
+        // --- DANGER ZONE ---
+        
+        function rmInstance() {
+            const inst = val('rm_inst_name');
+            if (!inst) { alert("Enter instance name!"); return; }
+            if (confirm(`Are you sure you want to delete '${inst}'?\nThis cannot be undone.`)) {
+                runTask('rm_inst', {inst: inst});
+            }
+        }
+
+        function nukeStunnel() {
+            if (confirm("Uninstall Stunnel completely?\nRemoves service, configs, and users.")) {
+                runTask('rm_stunnel');
+            }
+        }
+
+        function nukeTailscale() {
+            if (confirm("NUKE TAILSCALE?\nYou will lose connection immediately.")) {
+                runTask('rm_tailscale');
+            }
+        }
+
+        function nukeKoha() {
+            if (confirm("WARNING: UNINSTALL KOHA COMPLETELY?\nThis will remove ALL instances, databases, and users.")) {
+                if (confirm("FINAL WARNING: This is irreversible.\nAre you really sure?")) {
+                    runTask('rm_koha');
+                }
+            }
+        }
+
+        // --- ROBUST TERMINAL LOGIC ---
+        let term = null;
+        let fitAddon = null;
+        let termSocketListener = null; // Store listener reference to remove it later
+
+        function initTerminal() {
+            if (term) return; // Prevent double init
+            
+            // 1. UI Toggle
+            document.getElementById('btn-term-connect').style.display = 'none';
+            document.getElementById('btn-term-disconnect').style.display = 'inline-block';
+
+            // 2. Initialize xterm.js
+            term = new Terminal({
+                cursorBlink: true,
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: 14,
+                theme: {
+                    background: '#0f172a',
+                    foreground: '#ffffff',
+                    cursor: '#00ff00'
+                }
+            });
+
+            // 3. Load Fit Addon
+            fitAddon = new FitAddon.FitAddon();
+            term.loadAddon(fitAddon);
+
+            // 4. Mount to DOM
+            // We clear the container first to ensure no duplicate terminals
+            const container = document.getElementById('xterm-container');
+            container.innerHTML = ''; 
+            term.open(container);
+            fitAddon.fit();
+
+            // 5. Start Backend Shell
+            // We pass dimensions so backend PTY matches frontend size
+            socket.emit('start_terminal', {cols: term.cols, rows: term.rows});
+
+            // 6. Setup Listeners
+            
+            // Input: Send keystrokes to server
+            term.onData(data => {
+                socket.emit('term_input', data);
+            });
+
+            // Output: Receive data from server
+            // We define the function separately so we can remove it later
+            termSocketListener = (d) => {
+                term.write(d.data);
+            };
+            socket.on('term_data', termSocketListener);
+
+            // Resize: Handle window changes
+            window.addEventListener('resize', fitTerm);
+            
+            term.focus();
+        }
+
+        function disconnectTerminal() {
+            if (!term) return;
+
+            // 1. Tell Backend to kill the process
+            socket.emit('disconnect_terminal');
+
+            // 2. Remove Listeners (Crucial to prevent memory leaks)
+            socket.off('term_data', termSocketListener);
+            window.removeEventListener('resize', fitTerm);
+
+            // 3. Destroy Frontend Terminal
+            term.dispose();
+            term = null;
+            fitAddon = null;
+
+            // 4. UI Toggle
+            document.getElementById('btn-term-connect').style.display = 'inline-block';
+            document.getElementById('btn-term-disconnect').style.display = 'none';
+            
+            // Optional: Show "Disconnected" message in the empty box
+            document.getElementById('xterm-container').innerHTML = 
+                '<div style="color:#64748b; padding:20px; text-align:center; padding-top:200px;">// TERMINAL DISCONNECTED</div>';
+        }
+
+        // Helper for resizing
+        function fitTerm() {
+            if (fitAddon) {
+                fitAddon.fit();
+                socket.emit('resize_term', {cols: term.cols, rows: term.rows});
+            }
+        }
+
+        // --- LIVE STATS LOGIC ---
+        let statInterval = null;
+
+        // 1. Listen for Data from Server
+        socket.on('stats_update', (d) => {
+            // Update RAM
+            document.getElementById('bar-ram').style.width = d.ram_pct + '%';
+            document.getElementById('val-ram').innerText = `${d.ram_used} / ${d.ram_total}`;
+            document.getElementById('lbl-ram').innerText = `${d.ram_pct}% Used`;
+
+            // Update Disk
+            document.getElementById('bar-disk').style.width = d.disk_pct + '%';
+            document.getElementById('val-disk').innerText = `${d.disk_used} / ${d.disk_total}`;
+            document.getElementById('lbl-disk').innerText = `${d.disk_pct}% Used`;
+
+            // Update CPU
+            document.getElementById('bar-cpu').style.width = d.cpu_pct + '%';
+            document.getElementById('val-cpu').innerText = d.cpu_text;
+        });
+
+        // 2. Start Polling Loop
+        function startLiveStats() {
+            // Run immediately
+            runTask('server_stats');
+            // Then every 3 seconds
+            if (statInterval) clearInterval(statInterval);
+            statInterval = setInterval(() => {
+                // Only poll if we are connected AND on the dashboard tab
+                const isDash = document.getElementById('dash').classList.contains('active');
+                if (isDash) {
+                    runTask('server_stats');
+                }
+            }, 3000);
+        }
+
+        // 3. Stop Polling
+        function stopLiveStats() {
+            if (statInterval) clearInterval(statInterval);
+        }
+
+        // 4. Toggle Switch Logic
+        function toggleAutoRefresh() {
+            const on = document.getElementById('auto_refresh').checked;
+            if (on) startLiveStats();
+            else stopLiveStats();
+        }
+
+        // 5. Hook into Connection Success
+        // FIND your existing socket.on('status', ...) block and modify it:
+        socket.on('status', (d) => {
+            if (d.msg === 'Connected') {
+                // START MONITORING AUTOMATICALLY ON CONNECT
+                startLiveStats(); 
+            }
+        });
+
+        // --- FILE MANAGER LOGIC ---
+        let currentPath = "/home";
+
+        // 1. Refresh / List Files
+        function refreshFM() {
+            runTask('ls', {path: currentPath});
+        }
+
+        function loadDir(path) {
+            currentPath = path;
+            document.getElementById('fm_path').value = currentPath;
+            refreshFM();
+        }
+
+        function fmUp() {
+            // Remove trailing slash if present (except for root)
+            let path = currentPath;
+            if (path.length > 1 && path.endsWith('/')) {
+                path = path.slice(0, -1);
+            }
+
+            const parts = path.split('/');
+            parts.pop(); // Remove last segment
+            
+            let newPath = parts.join('/');
+            if (newPath === "") newPath = "/"; // Fallback for root
+            
+            loadDir(newPath);
+        }
+
+        // 2. Handle Server Response (Render Table)
+        // 2. Handle Server Response (Render Table)
+        socket.on('file_list', (d) => {
+            currentPath = d.path; 
+            document.getElementById('fm_path').value = d.path;
+            
+            const tbody = document.getElementById('fm_table_body');
+            tbody.innerHTML = '';
+
+            d.files.forEach(f => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                
+                // Icon Logic
+                let icon = f.type === 'dir' ? '<i class="fa-solid fa-folder" style="color:#f59e0b"></i>' : '<i class="fa-regular fa-file" style="color:#94a3b8"></i>';
+                
+                // --- BUTTON LOGIC ---
+                let primaryBtn = '';
+                let nameClick = '';
+                
+                if (f.type === 'dir') {
+                    // Folder: Open
+                    nameClick = `onclick="loadDir('${f.path}')" style="cursor:pointer; color: white;"`;
+                    primaryBtn = `<button class="btn-tiny" onclick="loadDir('${f.path}')">Open</button>`;
+                } else {
+                    // File: Download
+                    nameClick = `style="color: #cbd5e1;"`;
+                    // Note: We use runTask('get_file') which triggers the background download
+                    primaryBtn = `<button class="btn-tiny" onclick="runTask('get_file', {path: '${f.path}'})"><i class="fa-solid fa-download"></i></button>`;
+                }
+
+                // Delete Button (Red Trash Can)
+                // We use 'event.stopPropagation()' just in case you add row clicking later
+                let deleteBtn = `<button class="btn-tiny" style="color: #ef4444; border-color: #ef4444;" onclick="deleteFMFile('${f.path}')" title="Delete"><i class="fa-solid fa-trash"></i></button>`;
+
+                tr.innerHTML = `
+                    <td style="padding:10px;">
+                        <span ${nameClick}>${icon} &nbsp; ${f.name}</span>
+                    </td>
+                    <td style="padding:10px; font-size:0.85rem; color:#94a3b8;">${f.size}</td>
+                    <td style="padding:10px;">
+                        <div style="display:flex; gap: 8px;">
+                            ${primaryBtn}
+                            ${deleteBtn}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+
+        function deleteFMFile(path) {
+            // Confirm with user to prevent accidents
+            if(confirm(`⚠️ PERMANENTLY DELETE:\n\n${path}\n\nAre you sure? This cannot be undone.`)) {
+                runTask('rm_file', {path: path});
+            }
+        }
+
+        // 3. Upload File Logic
+        function uploadFMFile() {
+            const input = document.getElementById('fm_upload_input');
+            if (input.files.length === 0) return;
+
+            const fd = new FormData();
+            fd.append('file', input.files[0]);
+
+            // Phase 1: HTTP Upload to Local Temp
+            fetch('/upload-fm', {method: 'POST', body: fd})
+            .then(r => r.json())
+            .then(d => {
+                if(d.status === 'uploaded') {
+                    alert("Uploading to server...");
+                    // Phase 2: SCP Transfer
+                    runTask('put_file', {
+                        local_path: d.local_path,
+                        remote_path: currentPath + "/" + d.filename
+                    });
+                }
+            });
+        }
+    </script>
+    <script src="/static/script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.7.0/lib/xterm-addon-fit.js"></script>
+</body>
+</html>

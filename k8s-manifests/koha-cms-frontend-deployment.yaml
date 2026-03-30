@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: koha-cms-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: koha-cms-frontend
+  template:
+    metadata:
+      labels:
+        app: koha-cms-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: ghcr.io/rklsubha2017-cloud/admin-cms-docker/koha-cms-frontend:latest
+        ports:
+        - containerPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: koha-cms-frontend-service
+spec:
+  selector:
+    app: koha-cms-frontend
+  ports:
+  - port: 80
+    targetPort: 80
