@@ -7,9 +7,10 @@ import AccountingMaster from './AccountingMaster';
 import ReportMaster from './ReportMaster';
 import SettingsMaster from './SettingsMaster';
 import Login from './Login';
-import { LayoutDashboard, Users, Ticket, Receipt, FileText, LogOut, Settings, ShieldAlert, ArrowLeft } from 'lucide-react'; 
+// Added 'Network' icon for the VPN menu link
+import { LayoutDashboard, Users, Ticket, Receipt, FileText, LogOut, Settings, ShieldAlert, ArrowLeft, Network } from 'lucide-react'; 
 
-// --- NEW: Professional Security Guard ---
+// --- Professional Security Guard ---
 const ProtectedRoute = ({ children, requiredPermission }) => {
     const role = localStorage.getItem('role');
     const permissions = JSON.parse(localStorage.getItem('permissions') || '{}');
@@ -97,9 +98,13 @@ function App() {
               <SidebarLink to="/reports" icon={<FileText size={20} />} label="Reports" />
             )}
             
-            {/* Conditional Settings Link: Only visible to Admins or Superadmins */}
+            {/* Conditional Settings & VPN Link: Only visible to Admins or Superadmins */}
             {(userRole === 'Admin' || perms.is_superadmin) && (
-              <SidebarLink to="/settings" icon={<Settings size={20} />} label="Settings" />
+              <>
+                <SidebarLink to="/settings" icon={<Settings size={20} />} label="Settings" />
+                {/* --- ADDED VPN SIDEBAR LINK HERE --- */}
+                <SidebarLink to="/vpn" icon={<Network size={20} />} label="VPN Network" />
+              </>
             )}
           </nav>
 
@@ -162,9 +167,18 @@ function App() {
                   } 
               />
               
-              <Route path="*" element={<Navigate to="/" />} />
+              {/* --- FIXED: MOVED VPN ROUTE HERE AND PROTECTED IT --- */}
+              <Route 
+                  path="/vpn" 
+                  element={
+                      <ProtectedRoute requiredPermission="is_superadmin">
+                          <VpnMaster />
+                      </ProtectedRoute>
+                  } 
+              />
 
-              <Route path="/vpn" element={<VpnMaster />} />
+              {/* Wildcard MUST stay at the very bottom */}
+              <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </div>
         </main>

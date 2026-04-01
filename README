@@ -79,3 +79,5 @@ kubectl apply -f koha-gitops-rule.yaml
 
 #PHASE 5:
 kubectl get pods -w
+
+kubectl exec -it <YOUR_HEADSCALE_POD_NAME> -n headscale -- headscale apikeys create -e 365d
