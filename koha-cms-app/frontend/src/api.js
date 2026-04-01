@@ -28,3 +28,15 @@ apiClient.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+
+// Add these to your existing exports in api.js
+export const getVpnNodes = async () => {
+    // Replace 'axiosInstance' with whatever you currently use in api.js
+    const response = await axiosInstance.get('/api/vpn/nodes'); 
+    return response.data;
+};
+
+export const generateVpnKey = async (data) => {
+    const response = await axiosInstance.post('/api/vpn/keys/generate', data);
+    return response.data;
+};

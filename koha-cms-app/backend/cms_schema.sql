@@ -86,6 +86,8 @@ CREATE TABLE users (
     can_view_vault BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+-- Insert default admin user (username: admin, password: admin123 - hash this in your application)
+INSERT INTO users (username, password_hash, role, is_superadmin, can_manage_clients, can_manage_accounting, can_manage_tickets, can_view_reports) VALUES ('admin',   '$2b$12$YYj67.vFwbQEApuyyDON5O2T1bjYqSrfjzZi2/W48aIuNqJbSkgYS', 'Admin', TRUE, TRUE, TRUE, TRUE, TRUE); 
 
 -- 6. SYSTEM PREFERENCES (Single Row Enforced)
 CREATE TABLE system_preferences (
@@ -104,6 +106,8 @@ CREATE TABLE system_preferences (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CHECK (id = 1)
 );
+-- Insert default preferences
+INSERT INTO system_preferences (id) VALUES (1);
 
 -- 7. REGION TO EMAIL MAPPING
 CREATE TABLE region_routing (

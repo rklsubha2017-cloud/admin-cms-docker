@@ -1,10 +1,11 @@
+import VpnMaster from './VpnMaster';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import Dashboard from './Dashboard';
 import ClientMaster from './ClientMaster';
 import TicketMaster from './TicketMaster';
 import AccountingMaster from './AccountingMaster';
 import ReportMaster from './ReportMaster';
-import SettingsMaster from './SettingsMaster'; 
+import SettingsMaster from './SettingsMaster';
 import Login from './Login';
 import { LayoutDashboard, Users, Ticket, Receipt, FileText, LogOut, Settings, ShieldAlert, ArrowLeft } from 'lucide-react'; 
 
@@ -162,6 +163,8 @@ function App() {
               />
               
               <Route path="*" element={<Navigate to="/" />} />
+
+              <Route path="/vpn" element={<VpnMaster />} />
             </Routes>
           </div>
         </main>

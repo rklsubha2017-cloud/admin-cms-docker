@@ -18,3 +18,64 @@ kubectl apply -f koha-secrets.yaml
 
 # Once applied, delete the file from the server so it doesn't just sit there
 rm koha-secrets.yaml
+
+
+
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+nano my-app-rule.yaml
+
+kubectl apply -f my-app-rule.yaml
+
+kubectl get pods -w
+
+########INSTALL FROM SCRATCH#####
+#PHASE 1:
+#1. Update the System
+sudo apt update && sudo apt upgrade -y
+
+#2. Install K3s
+curl -sfL https://get.k3s.io | sh -
+
+#3. Check K3s Status
+sudo systemctl status k3s
+kubectl get nodes
+
+#PHASE 2:
+#1. Point your domain to your server's IP address (using A record in DNS settings)
+
+#2. Install cert-manager
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.yaml
+kubectl get pods -n cert-manager
+
+#PHASE 3:
+#1. Create the Environment Secrets
+nano koha-secrets.yaml
+# (Paste your secret configurations here and save)
+kubectl apply -f koha-secrets.yaml
+rm koha-secrets.yaml
+
+#2. Add your SSH key
+mkdir -p /root/.ssh
+nano /root/.ssh/id_ed25519
+# (PASTE YOUR PRIVATE SSH KEY HERE, SAVE AND EXIT)
+
+# Secure the file
+chmod 600 /root/.ssh/id_ed25519
+
+# Tell Kubernetes to memorize this file as a Secret
+kubectl create secret generic koha-ssh-key --from-file=id_ed25519=/root/.ssh/id_ed25519
+
+#PHASE 4:
+#1. Install ArgoCD into the Cluster
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+#2. Give ArgoCD its Instructions
+nano koha-gitops-rule.yaml
+# (PASTE YOUR INGRESS RULES HERE, SAVE AND EXIT)
+kubectl apply -f koha-gitops-rule.yaml
+
+#PHASE 5:
+kubectl get pods -w

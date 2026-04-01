@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse, StreamingResponse, FileResponse, Response
 from pydantic import BaseModel
+import headscale_helper
 from sqlalchemy import text
 from database import engine
 from typing import Optional, List
@@ -109,6 +110,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+class KeyRequest(BaseModel):
+    user: str
+    expiration_hours: int = 24
 
 # ==========================================
 # 1. DATA VALIDATION MODELS (The Bouncers)
@@ -1598,3 +1603,25 @@ async def import_tickets(file: UploadFile = File(...), user: dict = Depends(get_
                 errors.append(f"Row {i} (Ticket {row.get('ticket_id', 'Unknown')}): {str(e)}")
 
     return {"message": f"Successfully processed {success} tickets.", "errors": errors}
+
+# ==========================================
+# 8. HEADSCALE ENDPOINTS
+# ==========================================
+
+@app.get("/api/vpn/nodes")
+async def list_vpn_nodes():
+    try:
+        return await headscale_helper.get_nodes()
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/api/vpn/keys/generate")
+async def generate_vpn_key(request: KeyRequest):
+    try:
+        key_data = await headscale_helper.create_preauth_key(
+            user=request.user, 
+            expiration_hours=request.expiration_hours
+        )
+        return {"status": "success", "data": key_data}
+    except Exception as e:
+        return {"error": str(e)}

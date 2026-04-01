@@ -19,3 +19,4 @@ Thumbs.db
 
 # CRITICAL SECURITY IGNORES
 k8s-manifests/koha-secrets.yaml
+my-app-rule.yaml
