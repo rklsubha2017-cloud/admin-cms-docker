@@ -1609,14 +1609,21 @@ async def import_tickets(file: UploadFile = File(...), user: dict = Depends(get_
 # ==========================================
 
 @app.get("/api/vpn/nodes")
-async def list_vpn_nodes():
+async def list_vpn_nodes(user: dict = Depends(get_current_user)): # <--- ADDED SECURITY HERE
+    # Optional: Restrict to Admins only
+    if user.get("role") != "Admin" and not user.get("permissions", {}).get("is_superadmin"):
+        raise HTTPException(status_code=403, detail="Superadmin access required.")
+
     try:
         return await headscale_helper.get_nodes()
     except Exception as e:
         return {"error": str(e)}
 
 @app.post("/api/vpn/keys/generate")
-async def generate_vpn_key(request: KeyRequest):
+async def generate_vpn_key(request: KeyRequest, user: dict = Depends(get_current_user)): # <--- ADDED SECURITY HERE
+    if user.get("role") != "Admin" and not user.get("permissions", {}).get("is_superadmin"):
+        raise HTTPException(status_code=403, detail="Superadmin access required.")
+
     try:
         key_data = await headscale_helper.create_preauth_key(
             user=request.user, 

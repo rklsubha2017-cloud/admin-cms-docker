@@ -29,14 +29,28 @@ apiClient.interceptors.response.use(
     }
 );
 
-// Add these to your existing exports in api.js
+// --- Update your api.js with these securely configured calls ---
+
 export const getVpnNodes = async () => {
-    // Replace 'axiosInstance' with whatever you currently use in api.js
-    const response = await axiosInstance.get('/api/vpn/nodes'); 
+    const token = localStorage.getItem('token'); // Grab the login badge
+    
+    // Pass the token in the Headers
+    const response = await axios.get('/api/vpn/nodes', {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    }); 
     return response.data;
 };
 
 export const generateVpnKey = async (data) => {
-    const response = await axiosInstance.post('/api/vpn/keys/generate', data);
+    const token = localStorage.getItem('token'); // Grab the login badge
+    
+    // Pass the token in the Headers
+    const response = await axios.post('/api/vpn/keys/generate', data, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
     return response.data;
 };

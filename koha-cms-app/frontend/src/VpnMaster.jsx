@@ -68,7 +68,7 @@ const VpnMaster = () => {
               <th className="p-2">Hostname</th>
               <th className="p-2">IP Address</th>
               <th className="p-2">OS</th>
-              <th className="p-2">Status</th>
+              <th className="p-2">Last Seen</th>
             </tr>
           </thead>
           <tbody>
@@ -76,12 +76,15 @@ const VpnMaster = () => {
               <tr key={node.id} className="border-b">
                 <td className="p-2">{node.name}</td>
                 <td className="p-2">{node.ipAddresses[0]}</td>
-                <td className="p-2">{node.os}</td>
-                <td className="p-2">
-                  <span className={`px-2 py-1 rounded text-xs text-white ${node.online ? 'bg-green-500' : 'bg-red-500'}`}>
-                    {node.online ? 'Online' : 'Offline'}
+                <td className="p-2">{node?.hostInfo?.OS || "Unknown"}</td>
+                <td className="p-2 flex items-center gap-2">
+                  <span
+                      className={`w-3 h-3 rounded-full ${
+                      node.online ? 'bg-green-500' : 'bg-red-500'
+                      }`}>
                   </span>
-                </td>
+                  <span className="text-sm">{node.lastSeen}</span>
+              </td>
               </tr>
             ))}
             {nodes.length === 0 && (
