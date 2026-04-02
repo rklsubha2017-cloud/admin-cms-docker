@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: ghcr.io/rklsubha2017-cloud/admin-cms-docker/koha-cms-backend:latest
+        image: ghcr.io/rklsubha2017-cloud/admin-cms-docker/koha-cms-backend:4d5275e235cbdd96fa02525db17bf8a341e3b6a8
         ports:
         - containerPort: 8000
         # This injects all DB credentials and JWT/Vault keys automatically
